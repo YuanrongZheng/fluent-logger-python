@@ -13,13 +13,33 @@ except ImportError:
 
 from fluent import sender
 
-class FluentRecordFormatter(object):
-    def __init__(self, encoding='utf-8'):
+class FluentHandler(logging.Handler):
+    '''
+    Logging Handler for fluent.
+    '''
+    def __init__(self,
+           tag,
+           host='localhost',
+           port=24224,
+           timeout=3.0,
+           verbose=False,
+           encoding='utf-8'):
+        logging.Handler.__init__(self)
+        self.tag = tag
+        self.sender = sender.FluentSender(tag,
+                                          host=host, port=port,
+                                          timeout=timeout, verbose=verbose)
         self.hostname = socket.gethostname()
         self.fsencoding = sys.getfilesystemencoding()
         self.encoding = encoding
 
-    def format(self, record):
+    def emit(self, record):
+        self.sender.emit_with_time(None, record.created, self._build_structure(record))
+
+    def _close(self):
+        self.sender._close()
+
+    def _build_structure(self, record):
         data = {
             u'time': datetime.fromtimestamp(record.created).isoformat(),
             u'sys_msecs': record.msecs,
@@ -36,7 +56,7 @@ class FluentRecordFormatter(object):
             u'sys_processname': self._decode(record.processName),
             u'sys_thread': record.thread,
             u'sys_threadname': self._decode(record.threadName),
-            u'message': self._decode(self._format_message(record.msg, record.args))
+            u'message': self._decode(self.format(record))
             }
         return data
 
@@ -70,15 +90,6 @@ class FluentRecordFormatter(object):
         else:
             return self._asciidecode(str(value))
 
-    def _format_message(self, msg, args):
-        if isinstance(msg, basestring):
-            if args:
-                return msg % args
-            else:
-                return msg
-        else:
-            return msg
-
     def _format_exception(self, exc_info):
         if exc_info is not None and exc_info[0] is not None:
             return {
@@ -89,28 +100,4 @@ class FluentRecordFormatter(object):
         else:
             return None
 
-class FluentHandler(logging.Handler):
-    '''
-    Logging Handler for fluent.
-    '''
-    def __init__(self,
-           tag,
-           host='localhost',
-           port=24224,
-           timeout=3.0,
-           verbose=False):
 
-        self.tag = tag
-        self.sender = sender.FluentSender(tag,
-                                          host=host, port=port,
-                                          timeout=timeout, verbose=verbose)
-        self.fmt = FluentRecordFormatter()
-        logging.Handler.__init__(self)
-
-    def emit(self, record):
-        if record.levelno < self.level: return
-        data = self.fmt.format(record)
-        self.sender.emit_with_time(None, record.created, data)
-
-    def _close(self):
-        self.sender._close()
