@@ -64,7 +64,7 @@ class FluentHandler(logging.Handler):
         if value is None:
             return None
         elif isinstance(value, str):
-            return unicode(value, self.encoding)
+            return unicode(value, self.encoding, errors='replace')
         elif isinstance(value, unicode):
             return value
         else:
