@@ -94,7 +94,7 @@ class FluentHandler(logging.Handler):
         if exc_info is not None and exc_info[0] is not None:
             return {
                 'type': exc_info[0].__name__,
-                'value': exc_info[1].args,
+                'value': [self._decode(str(arg)) for arg in exc_info[1].args],
                 'traceback': traceback.extract_tb(exc_info[2])
                 }
         else:
