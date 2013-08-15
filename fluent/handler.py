@@ -63,12 +63,19 @@ class FluentHandler(logging.Handler):
     def _decode(self, value):
         if value is None:
             return None
-        elif isinstance(value, str):
-            return unicode(value, self.encoding, errors='replace')
         elif isinstance(value, unicode):
             return value
+        elif isinstance(value, basestring):
+            return unicode(value, self.encoding, errors='replace')
         else:
-            return self._decode(str(value))
+            try:
+                return getattr(value, '__unicode__', None)()
+            except:
+                pass
+            try:
+                return self._decode(unicode(value))
+            except (TypeError, UnicodeDecodeError):
+                return self._decode(str(value).encode('string_escape'))
 
     def _fsdecode(self, value):
         if value is None:
@@ -94,7 +101,7 @@ class FluentHandler(logging.Handler):
         if exc_info is not None and exc_info[0] is not None:
             return {
                 'type': exc_info[0].__name__,
-                'value': [self._decode(str(arg)) for arg in exc_info[1].args],
+                'value': [self._decode(arg) for arg in exc_info[1].args],
                 'traceback': traceback.extract_tb(exc_info[2])
                 }
         else:
