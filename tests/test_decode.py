@@ -43,3 +43,23 @@ class TestHandler(unittest.TestCase):
         self.assertTrue(isinstance(result, unicode), type(result).__name__)
         
         self.assertEqual(result, str(marker))
+
+    def test_decode_more(self):
+        handler = self._makeOne('app.follow', encoding='ascii')
+        self.assertEqual(handler._decode('a'), u'a')
+        self.assertEqual(handler._decode(u'\u2600'), u'\u2600')
+        self.assertEqual(handler._decode([1, 2, '3']), u"[1, 2, '3']")
+        self.assertEqual(handler._decode((1, 2, [3])), u"(1, 2, [3])")
+        self.assertEqual(handler._decode({'a': u'\u2600', 'c': [1, 2, {'c': 'd'}]}), u"{'a': u'\\u2600', 'c': [1, 2, {'c': 'd'}]}")
+
+        class Something(object):
+            def __unicode__(self):
+                return u'123'
+
+        self.assertEqual(handler._decode(Something()), u'123')
+
+        class Something(object):
+            def __str__(self):
+                return '\xe3\x98\x80'
+
+        self.assertEqual(handler._decode(Something()), u'\\xe3\\x98\\x80')

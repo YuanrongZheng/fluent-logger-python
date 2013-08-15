@@ -23,7 +23,8 @@ class FluentHandler(logging.Handler):
            port=24224,
            timeout=3.0,
            verbose=False,
-           encoding='utf-8'):
+           encoding='utf-8',
+           jsonifier=None):
         logging.Handler.__init__(self)
         self.tag = tag
         self.sender = sender.FluentSender(tag,
@@ -32,6 +33,7 @@ class FluentHandler(logging.Handler):
         self.hostname = socket.gethostname()
         self.fsencoding = sys.getfilesystemencoding()
         self.encoding = encoding
+        self.jsonifier = jsonifier
 
     def emit(self, record):
         self.sender.emit_with_time(None, record.created, self._build_structure(record))
@@ -58,17 +60,26 @@ class FluentHandler(logging.Handler):
             u'sys_threadname': self._decode(record.threadName),
             u'message': self._decode(self.format(record))
             }
+        if self.jsonifier is not None:
+            data.update(self.jsonifier(record.msg))
         return data
 
     def _decode(self, value):
         if value is None:
             return None
-        elif isinstance(value, str):
-            return unicode(value, self.encoding, errors='replace')
         elif isinstance(value, unicode):
             return value
+        elif isinstance(value, basestring):
+            return unicode(value, self.encoding, errors='replace')
         else:
-            return self._decode(str(value))
+            try:
+                return getattr(value, '__unicode__', None)()
+            except:
+                pass
+            try:
+                return self._decode(unicode(value))
+            except (TypeError, UnicodeDecodeError):
+                return self._decode(str(value).encode('string_escape'))
 
     def _fsdecode(self, value):
         if value is None:
@@ -94,7 +105,7 @@ class FluentHandler(logging.Handler):
         if exc_info is not None and exc_info[0] is not None:
             return {
                 'type': exc_info[0].__name__,
-                'value': [self._decode(str(arg)) for arg in exc_info[1].args],
+                'value': [self._decode(arg) for arg in exc_info[1].args],
                 'traceback': traceback.extract_tb(exc_info[2])
                 }
         else:
