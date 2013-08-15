@@ -23,7 +23,8 @@ class FluentHandler(logging.Handler):
            port=24224,
            timeout=3.0,
            verbose=False,
-           encoding='utf-8'):
+           encoding='utf-8',
+           jsonifier=None):
         logging.Handler.__init__(self)
         self.tag = tag
         self.sender = sender.FluentSender(tag,
@@ -32,6 +33,7 @@ class FluentHandler(logging.Handler):
         self.hostname = socket.gethostname()
         self.fsencoding = sys.getfilesystemencoding()
         self.encoding = encoding
+        self.jsonifier = jsonifier
 
     def emit(self, record):
         self.sender.emit_with_time(None, record.created, self._build_structure(record))
@@ -58,6 +60,8 @@ class FluentHandler(logging.Handler):
             u'sys_threadname': self._decode(record.threadName),
             u'message': self._decode(self.format(record))
             }
+        if self.jsonifier is not None:
+            data.update(self.jsonifier(record.msg))
         return data
 
     def _decode(self, value):

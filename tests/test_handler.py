@@ -19,7 +19,7 @@ class TestLogger(unittest.TestCase):
         return self._server.get_recieved()
 
     def test_simple(self):
-        h = fluent.handler.FluentHandler('app.follow', port=self._port)
+        h = fluent.handler.FluentHandler('app.follow', port=self._port, jsonifier=lambda x: x)
 
         logging.basicConfig(level=logging.INFO)
         l = logging.getLogger('fluent.test')
@@ -38,4 +38,4 @@ class TestLogger(unittest.TestCase):
         eq('userA', data[0][2]['from'])
         eq('userB', data[0][2]['to'])
         self.assert_(data[0][1])
-        self.assert_(isinstance(data[0][1], int))
+        self.assert_(isinstance(data[0][1], float))
