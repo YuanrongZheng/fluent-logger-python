@@ -79,7 +79,11 @@ class FluentHandler(logging.Handler):
             try:
                 return self._decode(unicode(value))
             except (TypeError, UnicodeEncodeError, UnicodeDecodeError):
-                return self._decode(str(value).encode('string_escape'))
+                try:
+                    return self._decode(str(value).encode('string_escape'))
+                except:
+                    # last resort
+                    return self._decode(unicode(type(value)))
 
     def _fsdecode(self, value):
         if value is None:
