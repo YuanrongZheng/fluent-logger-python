@@ -24,7 +24,8 @@ class FluentHandler(logging.Handler):
            timeout=3.0,
            verbose=False,
            encoding='utf-8',
-           jsonifier=None):
+           jsonifier=None,
+           extra_attrs=[]):
         logging.Handler.__init__(self)
         self.tag = tag
         self.sender = sender.FluentSender(tag,
@@ -34,6 +35,8 @@ class FluentHandler(logging.Handler):
         self.fsencoding = sys.getfilesystemencoding()
         self.encoding = encoding
         self.jsonifier = jsonifier
+        self.extra_attrs = extra_attrs
+        print >>sys.stderr, '*' * 78, extra_attrs
 
     def emit(self, record):
         self.sender.emit_with_time(None, record.created, self._build_structure(record))
@@ -60,9 +63,28 @@ class FluentHandler(logging.Handler):
             u'sys_threadname': self._decode(record.threadName),
             u'message': self._decode(self.format(record))
             }
+        for k in self.extra_attrs:
+            try:
+                data[k] = self._decode_tree(getattr(record, k))
+            except AttributeError:
+                pass
         if self.jsonifier is not None:
             data.update(self.jsonifier(record.msg))
         return data
+
+    def _decode_tree(self, value):
+        if isinstance(value, dict):
+            return dict(
+                (k, self._decode_tree(v))
+                for k, v in value.items()
+                )
+        elif isinstance(value, (list, tuple)):
+            return [
+                self._decode_tree(v)
+                for v in value
+                ]
+        else:
+            return self._decode(value)
 
     def _decode(self, value):
         if value is None:
