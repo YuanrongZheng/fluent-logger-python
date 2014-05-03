@@ -36,7 +36,6 @@ class FluentHandler(logging.Handler):
         self.encoding = encoding
         self.jsonifier = jsonifier
         self.extra_attrs = extra_attrs
-        print >>sys.stderr, '*' * 78, extra_attrs
 
     def emit(self, record):
         self.sender.emit_with_time(None, record.created, self._build_structure(record))
