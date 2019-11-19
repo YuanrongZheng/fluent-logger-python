@@ -56,7 +56,7 @@ class FluentSender(object):
             tag = '.'.join((self.tag, label))
         else:
             tag = self.tag
-        packet = (tag, timestamp, data)
+        packet = (tag, int(timestamp), data)
         if self.verbose:
             print(packet)
         return self.packer.pack(packet)
