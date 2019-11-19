@@ -109,8 +109,8 @@ class FluentHandler(logging.Handler):
     def _fsdecode(self, value):
         if value is None:
             return None
-        elif isinstance(value, str):
-            return str(value, self.fsencoding)
+        #elif isinstance(value, str):
+            #return str(value, self.fsencoding)
         elif isinstance(value, str):
             return value
         else:
@@ -119,8 +119,8 @@ class FluentHandler(logging.Handler):
     def _asciidecode(self, value):
         if value is None:
             return None
-        #elif isinstance(value, str):
-            #return str(value)
+        elif isinstance(value, str):
+            return str(value)
         elif isinstance(value, str):
             return value
         else:
