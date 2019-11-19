@@ -45,22 +45,22 @@ class FluentHandler(logging.Handler):
 
     def _build_structure(self, record):
         data = {
-            u'time': datetime.fromtimestamp(record.created).isoformat(),
-            u'sys_msecs': record.msecs,
-            u'sys_host' : self._decode(self.hostname),
-            u'sys_name' : self._asciidecode(record.name),
-            u'sys_exc_info' : self._format_exception(record.exc_info),
-            u'sys_levelno' : record.levelno,
-            u'sys_levelname' : self._decode(record.levelname),
-            u'sys_lineno' : record.lineno,
-            u'sys_module' : self._decode(record.module),
-            u'sys_filename' : self._fsdecode(record.filename),
-            u'sys_funcname' : self._decode(record.funcName),
-            u'sys_process': record.process,
-            u'sys_processname': self._decode(record.processName),
-            u'sys_thread': record.thread,
-            u'sys_threadname': self._decode(record.threadName),
-            u'message': self._decode(self.format(record))
+            'time': datetime.fromtimestamp(record.created).isoformat(),
+            'sys_msecs': record.msecs,
+            'sys_host' : self._decode(self.hostname),
+            'sys_name' : self._asciidecode(record.name),
+            'sys_exc_info' : self._format_exception(record.exc_info),
+            'sys_levelno' : record.levelno,
+            'sys_levelname' : self._decode(record.levelname),
+            'sys_lineno' : record.lineno,
+            'sys_module' : self._decode(record.module),
+            'sys_filename' : self._fsdecode(record.filename),
+            'sys_funcname' : self._decode(record.funcName),
+            'sys_process': record.process,
+            'sys_processname': self._decode(record.processName),
+            'sys_thread': record.thread,
+            'sys_threadname': self._decode(record.threadName),
+            'message': self._decode(self.format(record))
             }
         for k in self.extra_attrs:
             try:
@@ -75,7 +75,7 @@ class FluentHandler(logging.Handler):
         if isinstance(value, dict):
             return dict(
                 (k, self._decode_tree(v))
-                for k, v in value.items()
+                for k, v in list(value.items())
                 )
         elif isinstance(value, (list, tuple)):
             return [
@@ -88,30 +88,30 @@ class FluentHandler(logging.Handler):
     def _decode(self, value):
         if value is None:
             return None
-        elif isinstance(value, unicode):
+        elif isinstance(value, str):
             return value
-        elif isinstance(value, basestring):
-            return unicode(value, self.encoding, errors='replace')
+        elif isinstance(value, str):
+            return str(value, self.encoding, errors='replace')
         else:
             try:
                 return getattr(value, '__unicode__', None)()
             except:
                 pass
             try:
-                return self._decode(unicode(value))
+                return self._decode(str(value))
             except (TypeError, UnicodeEncodeError, UnicodeDecodeError):
                 try:
                     return self._decode(str(value).encode('string_escape'))
                 except:
                     # last resort
-                    return self._decode(unicode(type(value)))
+                    return self._decode(str(type(value)))
 
     def _fsdecode(self, value):
         if value is None:
             return None
         elif isinstance(value, str):
-            return unicode(value, self.fsencoding)
-        elif isinstance(value, unicode):
+            return str(value, self.fsencoding)
+        elif isinstance(value, str):
             return value
         else:
             return '-'
@@ -120,8 +120,8 @@ class FluentHandler(logging.Handler):
         if value is None:
             return None
         elif isinstance(value, str):
-            return unicode(value)
-        elif isinstance(value, unicode):
+            return str(value)
+        elif isinstance(value, str):
             return value
         else:
             return self._asciidecode(str(value))
