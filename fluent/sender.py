@@ -59,6 +59,12 @@ class FluentSender(object):
         packet = (tag, int(timestamp), data)
         if self.verbose:
             print(packet)
+        try:
+            if packet[2]['sys_exc_info']:
+                packet[2]['sys_exc_info']['traceback'][:] = [ tuple(i) for i in packet[2]['sys_exc_info']['traceback']]
+        except KeyError:
+            packet[2]['sys_exc_info']['traceback'] = None
+            print("logging error in fluent logger")
         return self.packer.pack(packet)
 
     def _send(self, bytes):
